@@ -64,7 +64,8 @@ class FileDownloaderMod(loader.Module):
             try:
                 f.close()
                 await message.edit(f"<b>Выгрузка</b>: <code>{filename}</code>")
-                await message.client.send_file(message.to_id, '/tmp/' + filename, caption=f"<b>[YT Downloader]</b> <code>{filename}</code>", reply_to=reply)
+                await message.client.send_file(message.to_id, '/tmp/' + filename, caption=f"<b>Файл загружен по ссылке</b>: <code>{url}</code>", reply_to=reply)
+                await message.client.send_file(message.to_id, '/tmp/' + filename, caption=f"<b>[YT Downloader]</b> <code>{link.title}</code>", reply_to=reply)
                 await message.delete()
             except Exception as e:
                 await message.edit(f"<b>Не удалось выгрузить файл</b>: <code>{e}</code>")
