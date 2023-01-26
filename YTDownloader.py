@@ -14,8 +14,8 @@ class FileDownloaderMod(loader.Module):
     strings = {"name": "YT Downloader"}
 
     @loader.unrestricted
-    async def dlfilecmd(self, message):
-        """.ytdl <link/reply message>
+    async def dlytcmd(self, message):
+        """.dlyt <link/reply message>
            Download video from YT link."""
         await message.edit("<b>Инициализация...</b>")
 
