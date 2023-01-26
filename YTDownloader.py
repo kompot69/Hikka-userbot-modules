@@ -4,6 +4,7 @@ from urllib.parse import urlparse
 from .. import loader, utils
 from pytube import YouTube
 import re
+import logging
 logger = logging.getLogger(__name__)
 
 
