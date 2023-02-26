@@ -4,9 +4,9 @@ from .. import loader, utils
 @loader.tds
 class FixLayoutMod(loader.Module):
 	"""Фиксит раскладку"""
-	strings = {"name": "FixLayout"}
+	strings = {"name": "Fix Layout"}
 	@loader.owner
-	async def printcmd(self, message):
+	async def flcmd(self, message):
 		""".fl <text or reply>"""
 		layout = dict(zip(map(ord, "qwertyuiop[]asdfghjkl;'zxcvbnm,./`" 'QWERTYUIOP{}ASDFGHJKL:"ZXCVBNM<>?~'), "йцукенгшщзхъфывапролджэячсмитьбю.ё" 'ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ,Ё'))
 		text = utils.get_args_raw(message)
