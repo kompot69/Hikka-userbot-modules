@@ -1,5 +1,3 @@
-# Код спизжен из модуля print, автора KeyZenD
-# Govnocode by @kompot_69
 from .. import loader, utils
 @loader.tds
 class FixLayoutMod(loader.Module):
