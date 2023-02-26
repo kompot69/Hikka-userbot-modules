@@ -4,7 +4,7 @@ from .. import loader, utils
 @loader.tds
 class FixLayoutMod(loader.Module):
 	"""Фиксит раскладку"""
-	strings = {"name": "Fix Layout"}
+	strings = {"name": "FixLayout"}
 	@loader.owner
 	async def printcmd(self, message):
 		""".fl <text or reply>"""
