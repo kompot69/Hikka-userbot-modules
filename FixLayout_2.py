@@ -8,11 +8,7 @@ class FixLayoutMod(loader.Module):
 	@loader.owner
 	async def printcmd(self, message):
 		""".fl <text or reply>"""
-		layout = dict(zip(map(ord, 
-			"qwertyuiop[]asdfghjkl;'zxcvbnm,./`"
-            'QWERTYUIOP{}ASDFGHJKL:"ZXCVBNM<>?~'),
-            "йцукенгшщзхъфывапролджэячсмитьбю.ё"
-            'ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ,Ё'))
+		layout = dict(zip(map(ord, "qwertyuiop[]asdfghjkl;'zxcvbnm,./`" 'QWERTYUIOP{}ASDFGHJKL:"ZXCVBNM<>?~'), "йцукенгшщзхъфывапролджэячсмитьбю.ё" 'ЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ,Ё'))
 		text = utils.get_args_raw(message)
 		if not text:
 			reply = await message.get_reply_message()
@@ -22,4 +18,3 @@ class FixLayoutMod(loader.Module):
 			text = reply.message
 		text = text.translate(layout)
 		await message.edit(text)
-			
