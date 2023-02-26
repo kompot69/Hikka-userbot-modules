@@ -2,7 +2,7 @@
 # Govnocode by @kompot_69
 from .. import loader, utils
 @loader.tds
-class FixLayout(loader.Module):
+class FixLayoutMod(loader.Module):
 	"""Фиксит раскладку"""
 	strings = {"name": "Fix Layout"}
 	@loader.owner
