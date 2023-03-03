@@ -79,7 +79,7 @@ class AFKMod(loader.Module):
                 return
             now = datetime.datetime.now().replace(microsecond=0)
             gone = datetime.datetime.fromtimestamp(self._db.get(__name__, "gone")).replace(microsecond=0)
-            diff = now - gone
+            diff = (now-gone).replace('days', 'дней').replace('day', 'дня')
             if afk_state is True:
                 ret = self.strings("afk", message).format(diff)
             elif afk_state is not False:
