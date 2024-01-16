@@ -1,4 +1,4 @@
-
+# ITS DONT WORK
 from telethon.errors import MessageIdInvalidError, MessageNotModifiedError
 from urllib.parse import urlparse
 from .. import loader, utils
