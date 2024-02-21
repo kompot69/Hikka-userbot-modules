@@ -90,7 +90,7 @@ class FileDownloaderMod(loader.Module):
                 length_h = sizeof_fmt(length)
                 downloaded = 0
                 message = await message.edit(f"<b>Загружаю файл</b>: <code>{filename}</code>")
-                with open('/tmp/FTG_fileDownloader/' + filename, 'wb') as file:
+                with open('/tmp/' + filename, 'wb') as file:
                     for chunk in r.iter_content(chunk_size=8192):
                         file.write(chunk)
                         downloaded += len(chunk)
@@ -101,7 +101,7 @@ class FileDownloaderMod(loader.Module):
                             message = await message.edit(f"<b>Загружаю файл</b>: <code>{filename}</code>\n{percent}% [<code>{'=' * done}{' ' * (20-done)}</code>] <code>{sizeof_fmt(downloaded)}/{length_h}</code>")
                     file.close()
             await message.client.send_file(
-                message.to_id, '/tmp/FTG_fileDownloader/' + filename,
+                message.to_id, '/tmp/' + filename,
                 caption=(
                     text or f"<b>Файл загружен по ссылке</b>: <code>{url}</code>"
                 ),
@@ -123,7 +123,7 @@ class FileDownloaderMod(loader.Module):
             await message.edit(f"<b>Произошла ошибка</b>:\n\n<code>{traceback}</code>")
         if filename:
             try:
-                os.remove("/tmp/FTG_fileDownloader/" + filename)
+                os.remove("/tmp/" + filename)
             except:
                 await message.client.send_message(message.to_id, f"<b>Ошибка удаления временного файла</b>:\n\n<code>{format_exc()}</code>", reply_to=reply)
 
