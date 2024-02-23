@@ -40,11 +40,6 @@ class FileDownloaderAltMod(loader.Module):
     async def dlfilealtcmd(self, message):
         """<url/reply> - Скачать файл и выгрузить в ТГ"""
         
-        #if message.from_id == message.peer_id : #(если отправил==тот с кем чат) по хорошему сделать так: if from_id != (ID юзера с ботом)
-        #    message.client.send_message(message.peer_id, "<b>Инициализация...\n(AttributeError)</b>")
-        #else:
-        await message.client.send_message(message.peer_id,"<b>Инициализация...</b>")
-        
         prefix = self.db.get("dlfile", "command_prefix", ["."])[0]
         commands = [
             f"<code>{prefix}dlfile [пересланное сообщение]|<URL> [текст по окончанию загрузки]</code> - скачать файл по ссылке (продерживаются прямые ссылки, ссылки с перенаправлением), можно указать текст по окончанию загрузки - появляется вместо текста с информацией, по какой ссылке был скачан файл.",
