@@ -38,6 +38,7 @@ class FileDownloaderMod(loader.Module):
 
     @loader.unrestricted
     async def dlfilecmd(self, message):
+        """<url/reply> - Скачать файл & выгрузить в ТГ"""
         await message.edit("<b>Инициализация...</b>")
         prefix = self.db.get("dlfile", "command_prefix", ["."])[0]
         commands = [
