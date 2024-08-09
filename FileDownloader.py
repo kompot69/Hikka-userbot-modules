@@ -27,7 +27,7 @@ def sizeof_fmt(num):
 
 @loader.tds
 class FileDownloaderMod(loader.Module):
-    """File Downloader (Uploader to Telegram) v2.1 
+    """File Downloader (Uploader to Telegram) v3
     by @kompot_69 & @mirivan"""
     
     strings = {"name": "File Downloader"}
@@ -36,17 +36,30 @@ class FileDownloaderMod(loader.Module):
         self.client = client
         self.db = db
 
+    async def initialize(
+        self, message
+    ):
+        owner_id = (await self.client.get_me()).id
+        caller_id = message.from_id
+        text = '<b>Инициализация...</b>'
+        if caller_id == owner_id:
+            await message.edit(text)
+            reply = await message.get_reply_message()
+        else:
+            reply = await message.get_reply_message()
+            message = await message.reply(text, silent=True)
+        return message, reply
+
     @loader.unrestricted
     async def dlfilecmd(self, message):
         """<url/reply> - Скачать файл & выгрузить в ТГ"""
-        await message.edit("<b>Инициализация...</b>")
+        message, reply = await self.initialize(message)
         prefix = self.db.get("dlfile", "command_prefix", ["."])[0]
         commands = [
             f"<code>{prefix}dlfile [пересланное сообщение]|<URL> [текст по окончанию загрузки]</code> - скачать файл по ссылке (продерживаются прямые ссылки, ссылки с перенаправлением), можно указать текст по окончанию загрузки - появляется вместо текста с информацией, по какой ссылке был скачан файл.",
             f"<code>{prefix}dlfile <пересланное сообщение> [индекс> [текст по окончанию загрузки]</code> - скачать файл по ссылке из пересланного сообщения, можно указать индекс ссылки по которой необходимо скачать файл (должен начинаться с 1, используется только когда в сообщении присутствует более одной ссылки)."
         ]
         usage = "<b>Использование модуля</b>:\n" + "\n".join(commands)
-        reply = await message.get_reply_message()
         arg = utils.get_args_raw(message)
         url_regex = r"(?:https?:\/\/)[A-Za-z0-9]{2,}.(?:[A-Za-z]{2,})?[^\s]+"
 
@@ -70,7 +83,9 @@ class FileDownloaderMod(loader.Module):
                 else:
                     return await message.edit("2 "+usage)
         else:
-            return await message.edit("3 "+usage)
+            return await message.edit(
+                f"3 {usage}"
+            )
 
         try:
             with requests.get(url.strip(), headers={'Accept-Encoding': None}, stream=True, timeout=(10, 5), verify=False) as r:
@@ -102,7 +117,7 @@ class FileDownloaderMod(loader.Module):
                             message = await message.edit(f"<b>Загружаю файл</b>: <code>{filename}</code>\n{percent}% [<code>{'=' * done}{' ' * (20-done)}</code>] <code>{sizeof_fmt(downloaded)}/{length_h}</code>")
                     file.close()
             await message.client.send_file(
-                message.to_id, '/tmp/' + filename,
+                reply.to_id, '/tmp/' + filename,
                 caption=(
                     text or f"<b>Файл загружен по ссылке</b>: <code>{url}</code>"
                 ),
