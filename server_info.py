@@ -18,7 +18,7 @@ def set_prefix(percent):
 def set_service_prefix(status):
     match status:
         case 'active': return "🟢"
-        #case 'inactive': return "❗"
+        case 'inactive': return "🟡"
         case 'unknown': return "❓"
         case _: return "🔴"
 def get_load_average():
