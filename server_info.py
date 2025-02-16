@@ -103,7 +103,7 @@ def get_ram_info():
         return ram    
     except PermissionError: return [('PermissionError', '-', '-', '-')]
     except Exception: return [('unknown', '-', '-', '-')]
-def get_disk_info():
+def get_disk_conf_info():
     try:
         output = subprocess.check_output(['lsblk', '-d', '-o', 'NAME,MODEL,SIZE,ROTA']).decode()
         disks = []
@@ -157,6 +157,6 @@ class ServerInfoMod(loader.Module):
         info_text+=f'\n<b>CPU:</b> <code>{get_cpu_info()}</code>'
         for gpu in get_gpu_info(): info_text+=f'\n<b>GPU:</b> <code>{gpu[0]}</code>'
         info_text+=f"{get_ram_info()}"
-        for disk in get_disk_info(): info_text+=f'\n<b>{disk[2]}:</b> <code>{disk[0]}</code> {disk[1]}'
+        for disk in get_disk_conf_info(): info_text+=f'\n<b>{disk[2]}:</b> <code>{disk[0]}</code> {disk[1]}'
 
         await utils.answer(message, info_text)
