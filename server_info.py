@@ -7,7 +7,6 @@ import re
 
 logger = logging.getLogger(__name__)
 
-services=['isc-dhcp-server','ufw','hikka','mcpes','baseholder']
 # [ INFORMATION ]
 def set_prefix(percent):
     match percent:
@@ -121,8 +120,26 @@ def get_disk_conf_info():
 @loader.tds
 class ServerInfoMod(loader.Module):
     """server info v1 by Kompot & ChatGPT"""
-    strings = {"name": "ServerInfo"}
-
+    
+    strings = {
+        "name": "ServerInfo",
+        "_cfg_services_list": "services check list",
+    }
+    #services = strings['sevices'].split(",")
+    # services=['isc-dhcp-server','ufw','hikka','mcpes','baseholder']
+    
+    def __init__(self):
+        self.config = loader.ModuleConfig(
+            loader.ConfigValue(
+                "services_list",
+                "hikka,ssh,",
+                lambda m: self.strings["_cfg_services_list"],
+            ),
+        )
+        self.name = self.strings["name"]
+        
+    services = self.config["services_list"].split(",")
+    
     async def serverinfocmd(self, message):
         """server usage & servises status"""
         info_text=''
