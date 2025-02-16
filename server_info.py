@@ -125,14 +125,12 @@ class ServerInfoMod(loader.Module):
         "name": "ServerInfo",
         "_cfg_services_list": "services check list",
     }
-    #services = strings['sevices'].split(",")
-    # services=['isc-dhcp-server','ufw','hikka','mcpes','baseholder']
     
     def __init__(self):
         self.config = loader.ModuleConfig(
             loader.ConfigValue(
                 "services_list",
-                "hikka,ssh,",
+                "hikka,ssh",
                 lambda m: self.strings["_cfg_services_list"],
             ),
         )
