@@ -137,8 +137,6 @@ class ServerInfoMod(loader.Module):
             ),
         )
         self.name = self.strings["name"]
-        
-    services = self.config["services_list"].split(",")
     
     async def serverinfocmd(self, message):
         """server usage & servises status"""
@@ -159,6 +157,7 @@ class ServerInfoMod(loader.Module):
             info_text+=f'{set_prefix(info["used_percent"])} {disk} - free: {info["free"]} of {info["total"]} (used {info["used_percent"]}%)\n'
             
         info_text+='\n<b>Services:</b>'
+        services = self.config["services_list"].split(",")
         for service in services:
             status=get_service_status(service+".service")
             info_text+=f'\n{set_service_prefix(status)} {service}: {status}'
