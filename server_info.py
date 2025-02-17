@@ -138,6 +138,7 @@ class ServerInfoMod(loader.Module):
     
     async def serverinfocmd(self, message):
         """server usage & servises status"""
+        utils.answer(message, f'<b>[{self.name}]</b>')
         info_text=''
         
         uptime=subprocess.check_output(['uptime', '-p']).decode().strip()
@@ -164,6 +165,7 @@ class ServerInfoMod(loader.Module):
 
     async def serverconfigcmd(self, message):
         """server components info"""
+        utils.answer(message, f'<b>[{self.name}]</b>')
         info_text=''
         
         mb_manufacturer, mb_model = get_motherboard_info()
