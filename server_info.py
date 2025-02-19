@@ -1,20 +1,25 @@
+# ахтунг! говнокод!
+# by @kompot_69
 from .. import loader, utils
 import logging
 import psutil
 import os
 import subprocess
 import re
+import json
 
 logger = logging.getLogger(__name__)
 
 # [ INFORMATION ]
-def set_prefix(percent):
-    match percent:
-        case p if p > 90: return "🔴"
-        case p if p > 75: return "🟠"
-        case p if p > 60: return "🟡" 
-        case p if p < 0: return "❓" 
-        case _: return "🟢"
+def set_prefix(cfg_percents,percent):
+    try:
+        match percent:
+            case p if p > cfg_percents[2]: return "🔴"
+            case p if p > cfg_percents[1]: return "🟠"
+            case p if p > cfg_percents[0]: return "🟡" 
+            case p if p < 0: return "❓" 
+            case _: return "🟢"
+    except Exception as err: return f'<b>overload_percents config error:</b> \n<code>{err}</code>\n'
 def set_service_prefix(status):
     match status:
         case 'active': return "🟢"
@@ -55,6 +60,13 @@ def get_service_status(service_name):
         result = subprocess.check_output(['systemctl', 'is-active', service_name]).decode().strip()
         return result
     except subprocess.CalledProcessError: return 'unknown'
+def get_failed_services():
+    try:
+        result=''
+        failed_services = json.loads(subprocess.check_output(['systemctl', 'list-units', '--failed', '-o', 'json-pretty']).decode().strip())
+        for service in failed_services: result+='\n🔴 '+service['unit']
+        return result
+    except Exception: pass
 
 # [ CONFIGURATION ]
 def get_motherboard_info():
@@ -119,11 +131,12 @@ def get_disk_conf_info():
 
 @loader.tds
 class ServerInfoMod(loader.Module):
-    """server info v1 by Kompot & ChatGPT"""
+    """server info v1.1 by @kompot_69 & ChatGPT"""
     
     strings = {
         "name": "ServerInfo",
         "_cfg_services_list": "services check list",
+        "_cfg_overload_percents": "overload percents (🟡🟠🔴)",
     }
     
     def __init__(self):
@@ -133,6 +146,11 @@ class ServerInfoMod(loader.Module):
                 "hikka,ssh",
                 lambda m: self.strings["_cfg_services_list"],
             ),
+            loader.ConfigValue(
+                "overload_percents",
+                "60,75,90",
+                lambda m: self.strings["_cfg_overload_percents"],
+            ),
         )
         self.name = self.strings["name"]
     
@@ -140,26 +158,28 @@ class ServerInfoMod(loader.Module):
         """server usage & servises status"""
         await utils.answer(message, f'<b>[{self.name}]</b>\ngetting info...')
         info_text=''
-        
+        percents = self.config["overload_percents"]
+
         uptime=subprocess.check_output(['uptime', '-p']).decode().strip()
         info_text+=f'<b>Uptime:</b> {uptime[3:]} \n'
 
         info_text+=f'<b>Ext. IP:</b> <code>{get_external_ip()}</code>\n\n'
 
         cpu_load=psutil.cpu_percent(interval=1)
-        info_text+=f'{set_prefix(cpu_load)} <b>CPU load (now, 1m, 5m, 15m):</b> {cpu_load}%, {get_load_average()}\n'
+        info_text+=f'{set_prefix(percents,cpu_load)} <b>CPU load (now, 1m, 5m, 15m):</b> {cpu_load}%, {get_load_average()}\n'
 
         mem_percent, mem_used, mem_total = get_memory_info()
-        info_text+=f'{set_prefix(mem_percent)} <b>RAM:</b> {mem_percent}% ({mem_used}MB / {mem_total}MB)\n'
+        info_text+=f'{set_prefix(percents,mem_percent)} <b>RAM:</b> {mem_percent}% ({mem_used}MB / {mem_total}MB)\n'
 
         for disk, info in get_disk_info().items():
-            info_text+=f'{set_prefix(info["used_percent"])} {disk} - free: {info["free"]} of {info["total"]} (used {info["used_percent"]}%)\n'
+            info_text+=f'{set_prefix(percents,info["used_percent"])} {disk} - free: {info["free"]} of {info["total"]} (used {info["used_percent"]}%)\n'
             
         info_text+='\n<b>Services:</b>'
-        services = self.config["services_list"].split(",")
+        services = self.config["services_list"].replace(" ", "").split(",")
         for service in services:
             status=get_service_status(service+".service")
             info_text+=f'\n{set_service_prefix(status)} {service}: {status}'
+        info_text+=get_failed_services()
 
         await utils.answer(message, info_text)
 
