@@ -1,5 +1,6 @@
 # ахтунг! говнокод!
 # by @kompot_69
+__version__ = "1.1"
 from .. import loader, utils
 import logging
 import psutil
@@ -131,7 +132,7 @@ def get_disk_conf_info():
 
 @loader.tds
 class ServerInfoMod(loader.Module):
-    """server info v1.1 by @kompot_69 & ChatGPT"""
+    """server info by @kompot_69 & ChatGPT"""
     
     strings = {
         "name": "ServerInfo",
