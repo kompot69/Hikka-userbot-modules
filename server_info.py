@@ -33,27 +33,22 @@ def get_load_average():
 def get_memory_info(bytes_per_unit):
     mem = psutil.virtual_memory()
     return mem.percent, mem.used // (bytes_per_unit * bytes_per_unit), mem.total // (bytes_per_unit * bytes_per_unit)
+def size_count(bytes_per_unit, bytes):
+    if bytes > (bytes_per_unit*bytes_per_unit): return f'{bytes / bytes_per_unit / bytes_per_unit:.1f}TB' # if bytes > 1 TB
+    elif bytes > bytes_per_unit: return f'{bytes / bytes_per_unit:.1f}GB' # if bytes > 1 GB
+    else: return f'{bytes}MB'
 def get_disk_info(bytes_per_unit):
     partitions = psutil.disk_partitions()
     disk_info = {}
     for partition in partitions:
         usage = psutil.disk_usage(partition.mountpoint)
-        free_mb = usage.free // (bytes_per_unit * bytes_per_unit)
-        total_mb = usage.total // (bytes_per_unit * bytes_per_unit)
-        used_mb = usage.used // (bytes_per_unit * bytes_per_unit)
+        free_mb = usage.free / (bytes_per_unit * bytes_per_unit)
+        total_mb = usage.total / (bytes_per_unit * bytes_per_unit)
+        used_mb = usage.used / (bytes_per_unit * bytes_per_unit)
+        free_display = size_count(bytes_per_unit,free_mb)
+        total_display = size_count(bytes_per_unit,total_mb)
+        used_display = size_count(bytes_per_unit,used_mb)
         used_percent = round((usage.used / usage.total) * 100, 1)
-        if free_mb > (bytes_per_unit*bytes_per_unit): # if size > 1 TB
-            free_display = f'{free_mb / bytes_per_unit / bytes_per_unit:.1f}TB'
-            total_display = f'{total_mb / bytes_per_unit / bytes_per_unit:.1f}TB'
-            used_display = f'{used_mb / bytes_per_unit / bytes_per_unit:.1f}TB'
-        elif free_mb > bytes_per_unit: # if size > 1 GB
-            free_display = f'{free_mb / bytes_per_unit:.1f}GB'
-            total_display = f'{total_mb / bytes_per_unit:.1f}GB'
-            used_display = f'{used_mb / bytes_per_unit:.1f}GB'
-        else:
-            free_display = f'{free_mb}MB'
-            total_display = f'{total_mb}MB'
-            used_display = f'{used_mb}MB'
         disk_info[partition.device] = {
             'free': free_display,
             'total': total_display,
@@ -196,8 +191,8 @@ class ServerInfoMod(loader.Module):
         if show_ip: info_text+=f'<b>Ext. IP:</b> <code>{get_external_ip()}</code>\n'
 
         cpu_load=psutil.cpu_percent(interval=1)
-        info_text+=f'\n{set_prefix(percents,cpu_load)} <b>CPU load:</b> {cpu_load}%\n'
-        if extended_view: info_text+=f'<b> └ 1m, 5m, 15m :</b> {get_load_average()[-1:-1]}\n'
+        info_text+=f'\n{set_prefix(percents,cpu_load)} <b>CPU:</b> {cpu_load}%\n'
+        if extended_view: info_text+=f'<b> └ 1m, 5m, 15m :</b> {get_load_average()}\n'
 
         mem_percent, mem_used, mem_total = get_memory_info(bytes_per_unit)
         if extended_view: info_text+=f'{set_prefix(percents,mem_percent)} <b>RAM:</b> {mem_percent}%\n'
