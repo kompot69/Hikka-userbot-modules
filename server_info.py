@@ -1,6 +1,6 @@
 # ахтунг! говнокод!
 # by @kompot_69
-__version__ = "1.2"
+__version__ = (1, 2)
 from .. import loader, utils
 import logging
 import psutil
