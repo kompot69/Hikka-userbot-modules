@@ -34,6 +34,7 @@ def get_memory_info(bytes_per_unit):
     mem = psutil.virtual_memory()
     return mem.percent, mem.used // (bytes_per_unit * bytes_per_unit), mem.total // (bytes_per_unit * bytes_per_unit)
 def size_count(bytes_per_unit, bytes):
+    bytes= bytes / (bytes_per_unit * bytes_per_unit)
     if bytes > (bytes_per_unit*bytes_per_unit): return f'{bytes / bytes_per_unit / bytes_per_unit:.1f}TB' # if bytes > 1 TB
     elif bytes > bytes_per_unit: return f'{bytes / bytes_per_unit:.1f}GB' # if bytes > 1 GB
     else: return f'{bytes}MB'
@@ -42,18 +43,14 @@ def get_disk_info(bytes_per_unit):
     disk_info = {}
     for partition in partitions:
         usage = psutil.disk_usage(partition.mountpoint)
-        free_mb = usage.free / (bytes_per_unit * bytes_per_unit)
-        total_mb = usage.total / (bytes_per_unit * bytes_per_unit)
-        used_mb = usage.used / (bytes_per_unit * bytes_per_unit)
-        free_display = size_count(bytes_per_unit,free_mb)
-        total_display = size_count(bytes_per_unit,total_mb)
-        used_display = size_count(bytes_per_unit,used_mb)
-        used_percent = round((usage.used / usage.total) * 100, 1)
+        free_display = size_count(bytes_per_unit, usage.free)
+        total_display = size_count(bytes_per_unit, usage.total)
+        used_display = size_count(bytes_per_unit, usage.used)
         disk_info[partition.device] = {
             'free': free_display,
             'total': total_display,
             'used': used_display,
-            'used_percent': used_percent
+            'used_percent': usage.percent
         }
     return disk_info
 def get_external_ip():
@@ -142,7 +139,7 @@ class ServerInfoMod(loader.Module):
         "_cfg_services_list": "services check list",
         "_cfg_overload_percents": "overload percents (🟡🟠🔴)",
         "_cfg_bytes_per_unit": "bytes per unit (1000 or 1024)",
-        "_cfg_show_ip": "show ip in info",
+        "_cfg_show_ip": "show IP in info",
     }
     
     def __init__(self):
@@ -151,6 +148,7 @@ class ServerInfoMod(loader.Module):
                 "show_ip",
                 True,
                 lambda m: self.strings["_cfg_show_ip"],
+                validator=loader.validators.Boolean(),
             ),
             loader.ConfigValue(
                 "extended_view",
