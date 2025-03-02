@@ -183,8 +183,8 @@ class ServerInfoMod(loader.Module):
         show_ip = self.config["show_ip"]
         extended_view = self.config["extended_view"]
 	args = utils.get_args_raw(message)
-	if "-f" in args: extended_view=True 
-	if "-ip" in args: show_ip=True 
+        if "-f" in args: extended_view=True 
+        if "-ip" in args: show_ip=True 
 
 
         uptime=subprocess.check_output(['uptime', '-p']).decode().strip()
