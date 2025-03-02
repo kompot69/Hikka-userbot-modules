@@ -205,7 +205,7 @@ class ServerInfoMod(loader.Module):
         
 
         for disk, info in get_disk_info(bytes_per_unit).items():
-            if extended_view: info_text+=f'{set_prefix(percents,info["used_percent"])} <b>{disk} :</b> {info["used_percent"]}% \n<b> ├ free:</b> {info["free"]} of {info["total"]}\n<b> └ used:</b>\n'
+            if extended_view: info_text+=f'{set_prefix(percents,info["used_percent"])} <b>{disk} :</b> {info["used_percent"]}% \n<b> ├ free:</b> {info["free"]} of {info["total"]}\n<b> └ used:</b> {info["used"]}\n'
             else: info_text+=f'{set_prefix(percents,info["used_percent"])} {disk} - used {info["used_percent"]}%, free: {info["free"]}\n'
             
         info_text+='\n<b>Services:</b>'
