@@ -37,7 +37,7 @@ def size_count(bytes_per_unit, bytes):
     bytes= bytes / (bytes_per_unit * bytes_per_unit)
     if bytes > (bytes_per_unit*bytes_per_unit): return f'{bytes / bytes_per_unit / bytes_per_unit:.1f}TB' # if bytes > 1 TB
     elif bytes > bytes_per_unit: return f'{bytes / bytes_per_unit:.1f}GB' # if bytes > 1 GB
-    else: return f'{bytes}MB'
+    else: return f'{bytes:.1f}MB'
 def get_disk_info(bytes_per_unit):
     partitions = psutil.disk_partitions()
     disk_info = {}
