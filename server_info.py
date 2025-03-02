@@ -40,16 +40,24 @@ def get_disk_info(bytes_per_unit):
         usage = psutil.disk_usage(partition.mountpoint)
         free_mb = usage.free // (bytes_per_unit * bytes_per_unit)
         total_mb = usage.total // (bytes_per_unit * bytes_per_unit)
+        used_mb = usage.used // (bytes_per_unit * bytes_per_unit)
         used_percent = round((usage.used / usage.total) * 100, 1)
-        if free_mb > 5120:
+        if free_mb > (bytes_per_unit*bytes_per_unit): # if size > 1 TB
+            free_display = f'{free_mb / bytes_per_unit / bytes_per_unit:.1f}TB'
+            total_display = f'{total_mb / bytes_per_unit / bytes_per_unit:.1f}TB'
+            used_display = f'{used_mb / bytes_per_unit / bytes_per_unit:.1f}TB'
+        elif free_mb > bytes_per_unit: # if size > 1 GB
             free_display = f'{free_mb / bytes_per_unit:.1f}GB'
             total_display = f'{total_mb / bytes_per_unit:.1f}GB'
+            used_display = f'{used_mb / bytes_per_unit:.1f}GB'
         else:
             free_display = f'{free_mb}MB'
             total_display = f'{total_mb}MB'
+            used_display = f'{used_mb}MB'
         disk_info[partition.device] = {
             'free': free_display,
             'total': total_display,
+            'used': used_display,
             'used_percent': used_percent
         }
     return disk_info
@@ -153,6 +161,7 @@ class ServerInfoMod(loader.Module):
                 "extended_view",
                 True,
                 lambda m: self.strings["_cfg_extended_view"],
+                validator=loader.validators.Boolean(),
             ),
             loader.ConfigValue(
                 "services_list",
@@ -188,15 +197,16 @@ class ServerInfoMod(loader.Module):
 
         cpu_load=psutil.cpu_percent(interval=1)
         info_text+=f'\n{set_prefix(percents,cpu_load)} <b>CPU load:</b> {cpu_load}%\n'
-        if extended_view: info_text+=f'\n<b>└ 1m, 5m, 15m :</b> {get_load_average()[1:1]}\n'
+        if extended_view: info_text+=f'<b> └ 1m, 5m, 15m :</b> {get_load_average()[-1:-1]}\n'
 
         mem_percent, mem_used, mem_total = get_memory_info(bytes_per_unit)
-        if not extended_view: info_text+=f'{set_prefix(percents,mem_percent)} <b>RAM:</b> {mem_percent}% ({mem_used}MB / {mem_total}MB)\n'
+        if extended_view: info_text+=f'{set_prefix(percents,mem_percent)} <b>RAM:</b> {mem_percent}%\n'
         else: info_text+=f'{set_prefix(percents,mem_percent)} <b>RAM:</b> {mem_percent}% ({mem_used}MB / {mem_total}MB)\n'
         
 
         for disk, info in get_disk_info(bytes_per_unit).items():
-            info_text+=f'{set_prefix(percents,info["used_percent"])} {disk} - free: {info["free"]} of {info["total"]} (used {info["used_percent"]}%)\n'
+            if extended_view: info_text+=f'{set_prefix(percents,info["used_percent"])} <b>{disk} :</b> {info["used_percent"]}% \n<b> ├ free:</b> {info["free"]} of {info["total"]}\n<b> └ used:</b>\n'
+            else: info_text+=f'{set_prefix(percents,info["used_percent"])} {disk} - used {info["used_percent"]}%, free: {info["free"]}\n'
             
         info_text+='\n<b>Services:</b>'
         services = self.config["services_list"].replace(" ", "").split(",")
