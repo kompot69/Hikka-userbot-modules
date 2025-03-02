@@ -175,13 +175,17 @@ class ServerInfoMod(loader.Module):
         self.name = self.strings["name"]
     
     async def serverinfocmd(self, message):
-        """server usage & servises status"""
+        """[-f|-ip] - server usage & servises status"""
         await utils.answer(message, f'<b>[{self.name}]</b>\ngetting info...')
         info_text=''
         percents = self.config["overload_percents"]
         bytes_per_unit = self.config["bytes_per_unit"]
         show_ip = self.config["show_ip"]
         extended_view = self.config["extended_view"]
+        # args
+		if "-f" in utils.get_args_raw(message): extended_view=True 
+		if "-ip" in utils.get_args_raw(message): show_ip=True 
+
 
         uptime=subprocess.check_output(['uptime', '-p']).decode().strip()
         info_text+=f'<b>Uptime:</b> {uptime[3:]} \n'
@@ -211,7 +215,7 @@ class ServerInfoMod(loader.Module):
         await utils.answer(message, info_text)
 
     async def serverconfigcmd(self, message):
-        """server components info"""
+        """ - server components info"""
         await utils.answer(message, f'<b>[{self.name}]</b>\ngetting info...')
         info_text=''
         
