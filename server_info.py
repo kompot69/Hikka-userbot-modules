@@ -182,7 +182,7 @@ class ServerInfoMod(loader.Module):
         bytes_per_unit = self.config["bytes_per_unit"]
         show_ip = self.config["show_ip"]
         extended_view = self.config["extended_view"]
-	args = utils.get_args_raw(message)
+        args = utils.get_args_raw(message)
         if "-f" in args: extended_view=True 
         if "-ip" in args: show_ip=True 
 
