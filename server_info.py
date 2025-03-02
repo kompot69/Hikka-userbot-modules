@@ -140,6 +140,7 @@ class ServerInfoMod(loader.Module):
         "_cfg_overload_percents": "overload percents (🟡🟠🔴)",
         "_cfg_bytes_per_unit": "bytes per unit (1000 or 1024)",
         "_cfg_show_ip": "show IP in info",
+        "_cfg_extended_view": "extended view in info",
     }
     
     def __init__(self):
