@@ -1,6 +1,6 @@
 # ахтунг! говнокод!
 # by @kompot_69
-__version__ = "1.1"
+__version__ = "1.2"
 from .. import loader, utils
 import logging
 import psutil
@@ -29,21 +29,21 @@ def set_service_prefix(status):
         case _: return "🔴"
 def get_load_average():
     load_avg = os.getloadavg()
-    return [round(val * 100, 1) for val in load_avg]
-def get_memory_info():
+    return [round(val, 1) for val in load_avg]
+def get_memory_info(bytes_per_unit):
     mem = psutil.virtual_memory()
-    return mem.percent, mem.used // (1024 * 1024), mem.total // (1024 * 1024)
-def get_disk_info():
+    return mem.percent, mem.used // (bytes_per_unit * bytes_per_unit), mem.total // (bytes_per_unit * bytes_per_unit)
+def get_disk_info(bytes_per_unit):
     partitions = psutil.disk_partitions()
     disk_info = {}
     for partition in partitions:
         usage = psutil.disk_usage(partition.mountpoint)
-        free_mb = usage.free // (1024 * 1024)
-        total_mb = usage.total // (1024 * 1024)
+        free_mb = usage.free // (bytes_per_unit * bytes_per_unit)
+        total_mb = usage.total // (bytes_per_unit * bytes_per_unit)
         used_percent = round((usage.used / usage.total) * 100, 1)
         if free_mb > 5120:
-            free_display = f'{free_mb / 1024:.1f}GB'
-            total_display = f'{total_mb / 1024:.1f}GB'
+            free_display = f'{free_mb / bytes_per_unit:.1f}GB'
+            total_display = f'{total_mb / bytes_per_unit:.1f}GB'
         else:
             free_display = f'{free_mb}MB'
             total_display = f'{total_mb}MB'
@@ -138,10 +138,22 @@ class ServerInfoMod(loader.Module):
         "name": "ServerInfo",
         "_cfg_services_list": "services check list",
         "_cfg_overload_percents": "overload percents (🟡🟠🔴)",
+        "_cfg_bytes_per_unit": "bytes per unit (1000 or 1024)",
+        "_cfg_show_ip": "show ip in info",
     }
     
     def __init__(self):
         self.config = loader.ModuleConfig(
+            loader.ConfigValue(
+                "show_ip",
+                True,
+                lambda m: self.strings["_cfg_show_ip"],
+            ),
+            loader.ConfigValue(
+                "extended_view",
+                True,
+                lambda m: self.strings["_cfg_extended_view"],
+            ),
             loader.ConfigValue(
                 "services_list",
                 "hikka,ssh",
@@ -152,6 +164,11 @@ class ServerInfoMod(loader.Module):
                 "60,75,90",
                 lambda m: self.strings["_cfg_overload_percents"],
             ),
+            loader.ConfigValue(
+                "bytes_per_unit",
+                "1000",
+                lambda m: self.strings["_cfg_bytes_per_unit"],
+            ),
         )
         self.name = self.strings["name"]
     
@@ -160,19 +177,25 @@ class ServerInfoMod(loader.Module):
         await utils.answer(message, f'<b>[{self.name}]</b>\ngetting info...')
         info_text=''
         percents = self.config["overload_percents"]
+        bytes_per_unit = self.config["bytes_per_unit"]
+        show_ip = self.config["show_ip"]
+        extended_view = self.config["extended_view"]
 
         uptime=subprocess.check_output(['uptime', '-p']).decode().strip()
         info_text+=f'<b>Uptime:</b> {uptime[3:]} \n'
 
-        info_text+=f'<b>Ext. IP:</b> <code>{get_external_ip()}</code>\n\n'
+        if show_ip: info_text+=f'<b>Ext. IP:</b> <code>{get_external_ip()}</code>\n'
 
         cpu_load=psutil.cpu_percent(interval=1)
-        info_text+=f'{set_prefix(percents,cpu_load)} <b>CPU load (now, 1m, 5m, 15m):</b> {cpu_load}%, {get_load_average()}\n'
+        info_text+=f'\n{set_prefix(percents,cpu_load)} <b>CPU load:</b> {cpu_load}%\n'
+        if extended_view: info_text+=f'\n<b>└ 1m, 5m, 15m :</b> {get_load_average()[1:1]}\n'
 
-        mem_percent, mem_used, mem_total = get_memory_info()
-        info_text+=f'{set_prefix(percents,mem_percent)} <b>RAM:</b> {mem_percent}% ({mem_used}MB / {mem_total}MB)\n'
+        mem_percent, mem_used, mem_total = get_memory_info(bytes_per_unit)
+        if not extended_view: info_text+=f'{set_prefix(percents,mem_percent)} <b>RAM:</b> {mem_percent}% ({mem_used}MB / {mem_total}MB)\n'
+        else: info_text+=f'{set_prefix(percents,mem_percent)} <b>RAM:</b> {mem_percent}% ({mem_used}MB / {mem_total}MB)\n'
+        
 
-        for disk, info in get_disk_info().items():
+        for disk, info in get_disk_info(bytes_per_unit).items():
             info_text+=f'{set_prefix(percents,info["used_percent"])} {disk} - free: {info["free"]} of {info["total"]} (used {info["used_percent"]}%)\n'
             
         info_text+='\n<b>Services:</b>'
