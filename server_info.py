@@ -1,6 +1,6 @@
 # ахтунг! говнокод!
 # by @kompot_69
-__version__ = (1, 2)
+__version__ = (1, 3)
 from .. import loader, utils
 import logging
 import psutil
@@ -30,14 +30,15 @@ def set_service_prefix(status):
 def get_load_average():
     load_avg = os.getloadavg()
     return [round(val, 1) for val in load_avg]
-def get_memory_info(bytes_per_unit):
-    mem = psutil.virtual_memory()
-    return mem.percent, mem.used // (bytes_per_unit * bytes_per_unit), mem.total // (bytes_per_unit * bytes_per_unit)
 def size_count(bytes_per_unit, bytes):
-    bytes= bytes / (bytes_per_unit * bytes_per_unit)
+    bytes= bytes / (bytes_per_unit * bytes_per_unit) # b > mb
     if bytes > (bytes_per_unit*bytes_per_unit): return f'{bytes / bytes_per_unit / bytes_per_unit:.1f}TB' # if bytes > 1 TB
     elif bytes > bytes_per_unit: return f'{bytes / bytes_per_unit:.1f}GB' # if bytes > 1 GB
     else: return f'{bytes:.1f}MB'
+def get_memory_info(bytes_per_unit):
+    mem = psutil.virtual_memory()
+    #return mem.percent, mem.used // (bytes_per_unit * bytes_per_unit), mem.total // (bytes_per_unit * bytes_per_unit), mem.free // (bytes_per_unit * bytes_per_unit)
+    return mem.percent, size_count(bytes_per_unit, mem.used), size_count(bytes_per_unit, mem.total), size_count(bytes_per_unit, mem.free)
 def get_disk_info(bytes_per_unit):
     partitions = psutil.disk_partitions()
     disk_info = {}
@@ -111,7 +112,7 @@ def get_ram_info():
                 elif stripped_line.startswith("Speed:"): current_block["Speed"] = stripped_line.split(":", 1)[1].strip()
                 elif stripped_line.startswith("Part Number:"): current_block["Part Number"] = stripped_line.split(":", 1)[1].strip()
         for i, block in enumerate(blocks, 1):
-            ram+=f"\n<b>RAM:</b> <code>{block.get('Part Number', 'N/A')}</code> {block.get('Size', 'N/A')} {block.get('Type', 'N/A')} {block.get('Speed', 'N/A')}"
+            ram+=f"\n<b>RAM:</b> {block.get('Size', 'N/A')} {block.get('Type', 'N/A')} {block.get('Speed', 'N/A')} <code>{block.get('Part Number', 'N/A')}</code>"
         return ram    
     except PermissionError: return [('PermissionError', '-', '-', '-')]
     except Exception: return [('unknown', '-', '-', '-')]
@@ -197,9 +198,9 @@ class ServerInfoMod(loader.Module):
         info_text+=f'\n{set_prefix(percents,cpu_load)} <b>CPU:</b> {cpu_load}%\n'
         if extended_view: info_text+=f'<b> └ 1m, 5m, 15m :</b> {get_load_average()}\n'
 
-        mem_percent, mem_used, mem_total = get_memory_info(bytes_per_unit)
-        if extended_view: info_text+=f'{set_prefix(percents,mem_percent)} <b>RAM:</b> {mem_percent}%\n'
-        else: info_text+=f'{set_prefix(percents,mem_percent)} <b>RAM:</b> {mem_percent}% ({mem_used}MB / {mem_total}MB)\n'
+        mem_percent, mem_used, mem_total, mem_free = get_memory_info(bytes_per_unit)
+        if extended_view: info_text+=f'{set_prefix(percents,mem_percent)} <b>RAM:</b> {mem_percent}%\n<b> ├ free:</b> {mem_free} of {mem_total}\n<b> └ used:</b> {mem_used}\n'
+        else: info_text+=f'{set_prefix(percents,mem_percent)} <b>RAM:</b> {mem_percent}% - used {mem_used} of {mem_total}\n'
         
 
         for disk, info in get_disk_info(bytes_per_unit).items():
@@ -225,6 +226,6 @@ class ServerInfoMod(loader.Module):
         info_text+=f'\n<b>CPU:</b> <code>{get_cpu_info()}</code>'
         for gpu in get_gpu_info(): info_text+=f'\n<b>GPU:</b> <code>{gpu[0]}</code>'
         info_text+=f"{get_ram_info()}"
-        for disk in get_disk_conf_info(): info_text+=f'\n<b>{disk[2]}:</b> <code>{disk[0]}</code> {disk[1]}'
+        for disk in get_disk_conf_info(): info_text+=f'\n<b>{disk[2]}:</b> {disk[1]} <code>{disk[0]}</code>'
 
         await utils.answer(message, info_text)
