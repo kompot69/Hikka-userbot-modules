@@ -3,7 +3,7 @@
 # Description: Отправка сообщений через SMS
 # meta developer: @kompot_69
 # ---------------------------------------------------------------------------------
-__version__ = (1,5,"public beta") 
+__version__ = (1,6,"beta") 
 
 from .. import loader, utils
 from telethon import types
@@ -20,6 +20,7 @@ async def sms_sender(): # очередь sms
     try:
         logger.debug(f'sms queue started')
         while True:
+            await asyncio.sleep(1)
             try:
                 # return logger.info(await sms_queue.get())
                 tg_message, answer_data, del_sec, sms_text, to_number, timeout = await sms_queue.get()
@@ -28,9 +29,9 @@ async def sms_sender(): # очередь sms
                 cmd = ["gammu", "-c", "/root/.gammurc", "sendsms", "TEXT", f"+{to_number}", "-unicode", "-len", "64", "-text", sms_text ]
                 proc = await asyncio.create_subprocess_exec(*cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE )
                 stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
-                logger.debug(f'Сообщение от {tg_message.from_id} было отправлено по СМС на номер {to_number}')
+                logger.info(f'Сообщение от {tg_message.from_id} было отправлено по СМС на номер {to_number}')
                 if answer_data[0]: await utils.answer(message_answer, answer_data[2])
-                if proc.returncode != 0: logger.error(f"Ошибка gammu:\n{stdout.decode()}\n{stderr.decode()}")
+                if proc.returncode != 0: logger.warning(f"Ошибка gammu:\n{stdout.decode()}\n{stderr.decode()}")
 
             except asyncio.TimeoutError:
                 proc.kill()
@@ -49,13 +50,67 @@ async def sms_sender(): # очередь sms
     except asyncio.CancelledError: logger.debug(f'sms queue stopped')
     except Exception as e: logger.error(f'sms queue error: {e}', exc_info=True)
 
+async def sms_catcher(self): # прием sms
+    try:
+        logger.debug(f'sms catch started')
+        known_sms=None
+        while True:
+            try:
+                logger.debug(f'catching sms...')
+                proc = await asyncio.create_subprocess_exec(*["gammu", "getallsms"], stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE )
+                stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=5)
+                sms_srtrings = stdout.decode(errors="ignore").splitlines()
+                sms_list = []
+                sms = {}
+                sms_text_detector=0 # 0 - sleep, 1 - wait emtpy str, 2 - wait non-empty str
+                for srting in sms_srtrings:
+                    if srting=='SMS message': sms = {}
+                    if 'Location' in srting: sms['id'] = srting.split(',',1)[0].split('Location')[1].strip()
+                    elif 'Sent' in srting: sms['date'] = srting.split(':',1)[1].strip()
+                    elif 'Status' in srting: 
+                        sms['status'] = srting.split(':',1)[1].strip()
+                        sms_text_detector=1
+                    elif 'Remote number' in srting and str(self.config["to_number"]) in srting.split(':',1)[1].strip(): sms['sender'] = srting.split(':',1)[1].strip()
+                    elif srting=='' and sms_text_detector==1: sms_text_detector=2
+                    elif srting!='' and sms_text_detector==2: sms['text']=srting
+                    if len(sms)==5: 
+                        sms_list.append(sms)
+                        sms = {}
+                if known_sms == None and sms_list:
+                    known_sms = []
+                    for sms in sms_list: known_sms.append(sms["id"])
+                for sms in sms_list:
+                    if sms['id'] not in known_sms:
+                        logger.debug(f'catched new sms')
+                        known_sms.append(sms['id'])
+                        to_id=sms['text'].split(' ',1)[0]
+                        if to_id.isdigit() and 6<len(to_id)<12:
+                            logger.debug(f'sending new catched sms')
+                            msg_txt=sms['text'].split(' ',1)[1]+"\n — — — — — — — —\nℹ️ Это сообщение отправлено по SMS."
+                            await self.client.send_message(int(to_id),msg_txt)
+                        logger.debug(f"send msg from new sms: {sms}")
+
+                if proc.returncode != 0: logger.warning(f"Ошибка gammu:\n{stdout.decode()}\n{stderr.decode()}")
+                
+
+            except asyncio.TimeoutError:
+                proc.kill()
+                await proc.communicate()
+                logger.warning(f"Отправка SMS прервана по таймауту")
+            except subprocess.CalledProcessError as e: logger.error(f"Ошибка выполнения команды:\n{e.stdout}\n{e.stderr}")
+            except FileNotFoundError as e: logger.error(f"Команда gammu не найдена.")
+            await asyncio.sleep(60)
+    except asyncio.CancelledError: logger.debug(f'sms catch stopped')
+    except Exception as e: logger.error(f'sms catch error: {e}', exc_info=True)
+
+
 @loader.tds
 class SMSMod(loader.Module):
     """Отправка сообщений по SMS"""
 
     strings = {
         "name": "SMSer",
-        "_cfg_is_answer": "Уведомлять ли в чате об отправке сообщения?",
+        "_cfg_is_answer": "Уведомлять ли об отправке сообщения?",
         "_cfg_answer_sending_text": "Текст уведомления о попытке отправки.",
         "_cfg_answer_sended_text": "Текст уведомления об успешной отправке.",
         "_cfg_answer_send_error_text": "Текст уведомления об ошибке отправки.",
@@ -63,8 +118,8 @@ class SMSMod(loader.Module):
         "_cfg_use_whitelist": "Использовать ли белый список ID чатов?",
         "_cfg_whitelist_ids": "Белый список ID чатов (через запятую).",
         "_cfg_to_number": "Номер, на который отправлять SMS (без +).",
-        "_cfg_sms_add_date": "Добавлять ли время сообщений (по UTC) в SMS.",
-        "_cfg_timeout": "Лимит в секундах на отправку одного SMS.",
+        "_cfg_sms_add_date": "Добавлять время сообщений (по UTC) в SMS.",
+        "_cfg_timeout": "Timeout в секундах на отправку 1 сообщения.",
     }
 
     def __init__(self):
@@ -73,9 +128,9 @@ class SMSMod(loader.Module):
             loader.ConfigValue("answer_sending_text", "🕒 Отправка сообщения по SMS...", lambda m: self.strings["_cfg_answer_sending_text"]),
             loader.ConfigValue("answer_sended_text", "ℹ️ Сообщение отправлено по SMS", lambda m: self.strings["_cfg_answer_sended_text"]),
             loader.ConfigValue("answer_send_error_text", "❕ Ошибка отправки сообщения по SMS", lambda m: self.strings["_cfg_answer_send_error_text"]),
-            loader.ConfigValue("delete_seconds", "15", lambda m: self.strings["_cfg_del_sec"]),
+            loader.ConfigValue("delete_seconds", "30", lambda m: self.strings["_cfg_del_sec"]),
             loader.ConfigValue("use_whitelist", False, lambda m: self.strings["_cfg_use_whitelist"], validator=loader.validators.Boolean()),
-            loader.ConfigValue("whitelist_ids", "390623928,", lambda m: self.strings["_cfg_whitelist_ids"]),
+            loader.ConfigValue("whitelist_ids", "390623928,5803910472,", lambda m: self.strings["_cfg_whitelist_ids"]),
             loader.ConfigValue("to_number", "79000000000", lambda m: self.strings["_cfg_to_number"]),
             loader.ConfigValue("sms_add_date", True, lambda m: self.strings["_cfg_sms_add_date"], validator=loader.validators.Boolean()),
             loader.ConfigValue("timeout", "600", lambda m: self.strings["_cfg_timeout"]),
@@ -93,7 +148,9 @@ class SMSMod(loader.Module):
             self._db.set(__name__, "ratelimit", [])
             await self.allmodules.log("sms off")
             self.sms_sender_task.cancel() 
+            self.sms_catcher_task.cancel() 
             await self.sms_sender_task
+            await self.sms_catcher_task
             message_answer = await utils.answer(message, "<b>✖ Отправка сообщений по SMS отключена</b>")
             if int(self.config["delete_seconds"]) > 0:
                 await asyncio.sleep(int(self.config["delete_seconds"])*2)
@@ -105,6 +162,7 @@ class SMSMod(loader.Module):
             self._db.set(__name__, "ratelimit", [])
             await self.allmodules.log("sms on")
             self.sms_sender_task = asyncio.create_task(sms_sender())
+            self.sms_catcher_task = asyncio.create_task(sms_catcher(self))
             message_answer = await utils.answer(message, "<b>☑ Отправка сообщений по SMS включена</b>")
             if int(self.config["delete_seconds"]) > 0:
                 await asyncio.sleep(int(self.config["delete_seconds"])*2)
@@ -122,6 +180,7 @@ class SMSMod(loader.Module):
                 logger.debug("Новое сообщение найдено.")
                 self._db.setdefault(__name__, {}).setdefault("ratelimit", []).append(message.id)
                 self._db.save()
+
             if user.is_self or user.bot or user.verified:
                 logger.debug("Сообщение от себя, бота или официального аккаунта.")
                 return
@@ -151,7 +210,7 @@ class SMSMod(loader.Module):
                 answer_data=[self.config["is_answer"], self.config["answer_sending_text"], self.config["answer_sended_text"], self.config["answer_send_error_text"],]
                 await sms_queue.put((message, answer_data, int(self.config["delete_seconds"]), sms_text, self.config["to_number"], self.config["timeout"]))
                     
-            except Exception as e: logger.error(e, exc_info=True) # выдает ошибку
+            except Exception as e: logger.error(e, exc_info=True) # выдает ошибку 
             
     async def modem_identificate(self):
         logger.debug("Идентификация модема...")
@@ -161,7 +220,6 @@ class SMSMod(loader.Module):
             try:
                 stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=self.config["timeout"])
                 stdout_lines = stdout.decode(errors="ignore").splitlines()
-                logger.info(stdout_lines)
                 modem_interface = next((line for line in stdout_lines if "Device" in line), None)
                 if modem_interface: modem_interface = modem_interface.split(":", 1)[1].strip()
                 else: modem_interface = None
@@ -178,6 +236,6 @@ class SMSMod(loader.Module):
             return logger.warning(f"Модем в системе не найден: {e}")
         except FileNotFoundError:
             return logger.error("Команда gammu не найдена.")
-            
+
     def get_sms_status(self):
         return self._db.get(__name__, "sms", False)
