@@ -128,7 +128,8 @@ async def progress(current, total, message, filename, module_name):
         percent = round(current / total * 100, 1)
         done = int(20 * current / total)
         try:
-            message = await message.edit(f"<b>[{module_name}]</b>\nВыгрузка <code>{filename}</code>\n<code>[{'█' * done}{'▓' * (20-done)}]</code>\n<code>{sizeof_fmt(current)}/{sizeof_fmt(total)} | {percent}%</code>")
+            message = await message.edit(f"<b>[{module_name}]</b>\nВыгрузка <code>{filename}</code>\n<code>[{'█' * done}{'▒' * (20-done)}]</code>\n<code>{sizeof_fmt(current)}/{sizeof_fmt(total)} | {percent}%</code>")
             tasks[message.id] = message.edit_date + delta
         except MessageNotModifiedError:
             pass
+
