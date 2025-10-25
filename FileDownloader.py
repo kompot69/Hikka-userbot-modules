@@ -92,7 +92,7 @@ class FileDownloaderMod(loader.Module):
                         percent = round(downloaded / length * 100, 1)
                         now = datetime.datetime.now(tz=datetime.timezone.utc)
                         if message_to_edit.edit_date and now > message_to_edit.edit_date + delta:
-                            message_to_edit = await message_to_edit.edit(f"<b>[{self.strings['name']}]</b>\nЗагрузка <a href='{url}'>{filename} с сайта {url_domain}</a>\n<code>[{'▓' * done}{'░' * (20-done)}]</code>\n<code>{sizeof_fmt(downloaded)}/{length_h} | {percent}%</code>")
+                            message_to_edit = await message_to_edit.edit(f"<b>[{self.strings['name']}]</b>\nЗагрузка <a href='{url}'>{filename} с сайта {url_domain}</a>\n<code>[{'▓' * done}{' ' * (20-done)}]</code>\n<code>{sizeof_fmt(downloaded)}/{length_h} | {percent}%</code>")
                     file.close()
             await message.client.send_file(
                 (reply.to_id if reply else message.to_id), 
@@ -132,4 +132,5 @@ async def progress(current, total, message, filename, module_name):
             tasks[message.id] = message.edit_date + delta
         except MessageNotModifiedError:
             pass
+
 
