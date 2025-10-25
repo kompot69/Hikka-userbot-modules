@@ -97,7 +97,7 @@ class FileDownloaderMod(loader.Module):
             await message.client.send_file(
                 (reply.to_id if reply else message.to_id), 
                 f'/tmp/{filename}', 
-                caption=(f"<b>Файл загружен по ссылке</b>: {url}" if len(url)<300 else f"<b>Файл загружен c сайта <a href='{url}'>{url_domain}</a></b>"),
+                caption=f"<b>Файл загружен c сайта <a href='{url}'>{url_domain}</a></b>",
                 reply_to=reply,
                 progress_callback=lambda d, t: message.client.loop.create_task( progress(d, t, message, filename, self.strings['name']) )
             )
@@ -132,5 +132,6 @@ async def progress(current, total, message, filename, module_name):
             tasks[message.id] = message.edit_date + delta
         except MessageNotModifiedError:
             pass
+
 
 
