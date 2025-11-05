@@ -140,7 +140,7 @@ def get_cpu_info():
 def get_gpu_info():
     try:
         out = subprocess.check_output(['lspci', '-vnn']).decode()
-        matches = re.findall(r'VGA compatible controller.*?Subsystem: (.*?)\n', out, re.DOTALL)
+        matches = re.findall(r'(?:VGA compatible controller|3D controller).*?Subsystem: (.*?)\n', out, re.DOTALL)
         results = []
         for line in matches:
             if any(x in line.lower() for x in ['llvmpipe', 'integrated', 'cpu']):
@@ -279,3 +279,4 @@ class ServerInfoMod(loader.Module):
             else: info += str(get_ports_processes())
         
         await utils.answer(message, f"<b>[{self.name}]</b> {info}")
+
