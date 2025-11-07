@@ -284,7 +284,7 @@ class ServerInfoMod(loader.Module):
                     for gpu in gpus:
                         if gpu['type'] == 'nvidia':
                             info += (
-                                f'{set_prefix(percents,gpu["load"])} <b>{gpu.get("name") or "GPU"}:</b> {gpu["load"]}%\n<b> ├ free: </b>{gpu.get("mem_free")}MB of {gpu.get("mem_total")}MB\n<b> ├ used:</b> {gpu.get("mem_used")}MB\n<b> ├ power usage:</b> {gpu.get("power_used")}W/{gpu.get("power_total")}W\n<b> └ temp:</b> {gpu.get("temp")}*C\n' if ext else
+                                f'{set_prefix(percents,gpu["load"])} <b>{gpu.get("name") or "GPU"}:</b> {gpu["load"]}%\n<b> ├ free: </b>{gpu.get("mem_free")} of {gpu.get("mem_total")}\n<b> ├ used:</b> {gpu.get("mem_used")}\n<b> ├ power usage:</b> {gpu.get("power_used")}W/{gpu.get("power_total")}W\n<b> └ temp:</b> {gpu.get("temp")}*C\n' if ext else
                                 f'{set_prefix(percents,gpu["load"])} <b>GPU:</b> {gpu["load"]}% - used {gpu["mem_used"]} of {gpu["mem_total"]}\n'
                             )
                         if gpu['type'] == 'unknown': pass
@@ -312,4 +312,5 @@ class ServerInfoMod(loader.Module):
             else: info += str(get_ports_processes())
         
         await utils.answer(message, f"<b>[{self.name}]</b> {info}")
+
 
